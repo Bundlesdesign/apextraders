@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-editorial: 'Cormorant Garamond', Georgia, serif;
+    --font-interface: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'Space Mono', monospace;
+
+    /* Institutional Palette */
+    --color-charcoal: #17191B;
+    --color-ivory: #F4F1EA;
+    --color-white: #FFFFFF;
+    --color-stone: #B7B1A6;
+    --color-slate: #34383B;
+    --color-bronze: #9B8055;
+  }
+
+  body {
+    font-family: var(--font-interface);
+    background-color: #F4F1EA;
+    color: #17191B;
+    overflow-x: hidden;
+  }
+
+  /* Institutional refined hairline scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #F4F1EA;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #B7B1A6;
+    border-radius: 0px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #9B8055;
+  }
+}
+
+.font-editorial {
+  font-family: var(--font-editorial);
+  font-feature-settings: "liga" 1, "kern" 1;
+}
+
+.font-interface {
+  font-family: var(--font-interface);
+}
+
+.font-mono, .mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Institutional hairline borders */
+.border-hairline {
+  border-width: 1px;
+  border-color: rgba(183, 177, 166, 0.35);
+}
+
+.border-hairline-dark {
+  border-width: 1px;
+  border-color: rgba(52, 56, 59, 0.4);
+}

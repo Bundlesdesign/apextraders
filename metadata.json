@@ -1,0 +1,6 @@
+{
+  "name": "X-FUNDS Brokerage",
+  "description": "Next-generation multi-asset brokerage and institutional trading platform featuring real-time execution, advanced portfolio analytics, and double-entry ledger settlement.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

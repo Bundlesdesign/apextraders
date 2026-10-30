@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Administrator = server-set custom claim. The claim can only be set with the Admin SDK (scripts/bootstrap-admin.js).
+    function signedIn() { return request.auth != null; }
+    function isAdmin()  { return signedIn() && request.auth.token.admin == true; }
+    function owns(uid)  { return signedIn() && request.auth.uid == uid; }
+    function ownsDoc()  { return owns(resource.data.uid); }
+
+    // Profiles: created by the server. Owners may edit only display fields.
+    match /users/{uid} {
+      allow read: if owns(uid) || isAdmin();
+      allow update: if owns(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'phone'])
+        && request.resource.data.displayName is string && request.resource.data.displayName.size() <= 80
+        && request.resource.data.phone is string && request.resource.data.phone.size() <= 30;
+      allow create, delete: if false;
+    }
+
+    // Authoritative balances, positions, orders, executions, ledger, funding: READ-ONLY to clients. Server writes only.
+    match /accounts/{uid}        { allow read: if owns(uid) || isAdmin(); allow write: if false; }
+    match /positions/{id}        { allow read: if ownsDoc() || isAdmin(); allow write: if false; }
+    match /orders/{id}           { allow read: if ownsDoc() || isAdmin(); allow write: if false; }
+    match /executions/{id}       { allow read: if ownsDoc() || isAdmin(); allow write: if false; }
+    match /ledger_journal/{id}   { allow read: if ownsDoc() || isAdmin(); allow write: if false; }   // immutable
+    match /deposits/{id}         { allow read: if ownsDoc() || isAdmin(); allow write: if false; }
+    match /withdrawals/{id}      { allow read: if ownsDoc() || isAdmin(); allow write: if false; }
+    match /reversals/{id}        { allow read: if isAdmin(); allow write: if false; }
+    match /admin_adjustments/{id}{ allow read: if isAdmin(); allow write: if false; }
+    match /reconciliations/{id}  { allow read: if isAdmin(); allow write: if false; }
+    match /audit_logs/{id}       { allow read: if isAdmin(); allow write: if false; }
+    match /deposit_refs/{id}     { allow read, write: if false; }   // duplicate-payment guard, server only
+    match /idem/{id}             { allow read, write: if false; }
+    match /webhook_events/{id}   { allow read, write: if false; }
+    match /settings/{id}         { allow read: if isAdmin(); allow write: if false; }
+
+    // Notifications: owner can read and flip `read` only.
+    match /notifications/{id} {
+      allow read: if ownsDoc() || isAdmin();
+      allow update: if ownsDoc() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create, delete: if false;
+    }
+
+    // Convenience data the customer owns outright (no financial effect).
+    match /watchlists/{uid} {
+      allow read, write: if owns(uid) && request.resource.data.keys().hasOnly(['symbols', 'updatedAt'])
+        && request.resource.data.symbols is list && request.resource.data.symbols.size() <= 50;
+    }
+    match /price_alerts/{id} {
+      allow read: if ownsDoc() || isAdmin();
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'symbol', 'direction', 'priceMinor', 'active', 'createdAt'])
+        && request.resource.data.direction in ['above', 'below'] && request.resource.data.priceMinor is int
+        && request.resource.data.priceMinor > 0 && request.resource.data.active == true;
+      allow delete: if ownsDoc();
+      allow update: if false;
+    }
+    match /support_tickets/{id} {
+      allow read: if ownsDoc() || isAdmin();
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'subject', 'message', 'status', 'createdAt'])
+        && request.resource.data.status == 'open' && request.resource.data.subject.size() <= 120 && request.resource.data.message.size() <= 2000;
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+    // Everything else: denied by default.
+  }
+}
